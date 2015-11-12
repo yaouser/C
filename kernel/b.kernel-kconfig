@@ -1,0 +1,397 @@
+==============================================================================
+
+中心配置文件
+------------
+
+通常一个软件只有一个配置文件,里面保存所有的配置选项,这样是便于集中控制这个软件
+的整体.配置文件中的配置选项通常是布尔值或数值,这对于简单的配置应该是足够了,但
+是有一个明显的缺陷就是当一个配置选项依赖另一个选项时不能够灵活的控制.
+
+
+分布式配置文件(kconfig)
+-----------------------
+
+linux kernel中的配置文件可以是一个集中式中心配置文件吗?可以,但是管理这个庞大的
+工程经验告诉我们在这个工程不断的成级数的增长的时候这样只会让这个工程变得杂乱无
+章,由于内核不断的增长并且内核中各个部分的依赖会将这个问题凸显出来.
+
+内核中使用的是什么配置文件呢?是kconfig,和通常使用的简单配置文件不同,kconfig有
+比简单的配置文件更复杂的语法,需要使用一个简单的解析器来解析kconfig文件,这是一
+门计算机语言吗?放心,只需要认识几个简单的英文单词就可以胜任这项工作了.
+
+
+usb配置kconfig样例
+------------------
+
+drivers/usb/Kconfig
+      1 #
+      2 # USB device configuration
+      3 #
+      4 
+      5 config USB_OHCI_BIG_ENDIAN_DESC
+      6         bool
+      7 
+      8 config USB_OHCI_BIG_ENDIAN_MMIO
+      9         bool
+     10 
+     11 config USB_OHCI_LITTLE_ENDIAN
+     12         bool
+     13         default n if STB03xxx || PPC_MPC52xx
+     14         default y
+     15 
+     16 config USB_EHCI_BIG_ENDIAN_MMIO
+     17         bool
+     18 
+     19 config USB_EHCI_BIG_ENDIAN_DESC
+     20         bool
+     21 
+     22 menuconfig USB_SUPPORT
+     23         bool "USB support"
+     24         depends on HAS_IOMEM
+     25         default y
+     26         ---help---
+     27           This option adds core support for Universal Serial Bus (USB).
+     28           You will also need drivers from the following menu to make use of it.
+     29 
+     30 if USB_SUPPORT
+     31 
+     32 config USB_COMMON
+     33         tristate
+     34         default y
+     35         depends on USB || USB_GADGET
+     36 
+     37 config USB_ARCH_HAS_HCD
+     38         def_bool y
+     39 
+     40 # ARM SA1111 chips have a non-PCI based "OHCI-compatible" USB host interface.
+     41 config USB
+     42         tristate "Support for Host-side USB"
+     43         depends on USB_ARCH_HAS_HCD
+     44         select NLS  # for UTF-8 strings
+     45         ---help---
+     46           Universal Serial Bus (USB) is a specification for a serial bus
+     47           subsystem which offers higher speeds and more features than the
+     48           traditional PC serial port.  The bus supplies power to peripherals
+     49           and allows for hot swapping.  Up to 127 USB peripherals can be
+     50           connected to a single USB host in a tree structure.
+     51           
+     52           The USB host is the root of the tree, the peripherals are the
+     53           leaves and the inner nodes are special USB devices called hubs.
+     54           Most PCs now have USB host ports, used to connect peripherals
+     55           such as scanners, keyboards, mice, modems, cameras, disks,
+     56           flash memory, network links, and printers to the PC.
+     57 
+     58           Say Y here if your computer has a host-side USB port and you want
+     59           to use USB devices.  You then need to say Y to at least one of the
+     60           Host Controller Driver (HCD) options below.  Choose a USB 1.1
+     61           controller, such as "UHCI HCD support" or "OHCI HCD support",
+     62           and "EHCI HCD (USB 2.0) support" except for older systems that
+     63           do not have USB 2.0 support.  It doesn't normally hurt to select
+     64           them all if you are not certain.
+     65 
+     66           If your system has a device-side USB port, used in the peripheral
+     67           side of the USB protocol, see the "USB Gadget" framework instead.
+     68 
+     69           After choosing your HCD, then select drivers for the USB peripherals
+     70           you'll be using.  You may want to check out the information provided
+     71           in <file:Documentation/usb/> and especially the links given in
+     72           <file:Documentation/usb/usb-help.txt>.
+     73 
+     74           To compile this driver as a module, choose M here: the
+     75           module will be called usbcore.
+     76 
+     77 if USB
+     78 
+     79 source "drivers/usb/core/Kconfig"
+     80 
+     81 source "drivers/usb/mon/Kconfig"
+     82 
+     83 source "drivers/usb/wusbcore/Kconfig"
+     84 
+     85 source "drivers/usb/host/Kconfig"
+     86 
+     87 source "drivers/usb/renesas_usbhs/Kconfig"
+     88 
+     89 source "drivers/usb/class/Kconfig"
+     90 
+     91 source "drivers/usb/storage/Kconfig"
+     92 
+     93 source "drivers/usb/image/Kconfig"
+     94 
+     95 source "drivers/usb/usbip/Kconfig"
+     96 
+     97 endif
+     98 
+     99 source "drivers/usb/musb/Kconfig"
+    100 
+    101 source "drivers/usb/dwc3/Kconfig"
+    102 
+    103 source "drivers/usb/dwc2/Kconfig"
+    104 
+    105 source "drivers/usb/chipidea/Kconfig"
+    106 
+    107 source "drivers/usb/isp1760/Kconfig"
+    108 
+    109 comment "USB port drivers"
+    110 
+    111 if USB
+    112 
+    113 config USB_USS720
+    114         tristate "USS720 parport driver"
+    115         depends on PARPORT
+    116         select PARPORT_NOT_PC
+    117         ---help---
+    118           This driver is for USB parallel port adapters that use the Lucent
+    119           Technologies USS-720 chip. These cables are plugged into your USB
+    120           port and provide USB compatibility to peripherals designed with
+    121           parallel port interfaces.
+    122 
+    123           The chip has two modes: automatic mode and manual mode. In automatic
+    124           mode, it looks to the computer like a standard USB printer. Only
+    125           printers may be connected to the USS-720 in this mode. The generic
+    126           USB printer driver ("USB Printer support", above) may be used in
+    127           that mode, and you can say N here if you want to use the chip only
+    128           in this mode.
+    129 
+    130           Manual mode is not limited to printers, any parallel port
+    131           device should work. This driver utilizes manual mode.
+    132           Note however that some operations are three orders of magnitude
+    133           slower than on a PCI/ISA Parallel Port, so timing critical
+    134           applications might not work.
+    135 
+    136           Say Y here if you own an USS-720 USB->Parport cable and intend to
+    137           connect anything other than a printer to it.
+    138 
+    139           To compile this driver as a module, choose M here: the
+    140           module will be called uss720.
+    141 
+    142 source "drivers/usb/serial/Kconfig"
+    143 
+    144 source "drivers/usb/misc/Kconfig"
+    145 
+    146 source "drivers/usb/atm/Kconfig"
+    147 
+    148 endif # USB
+    149 
+    150 source "drivers/usb/phy/Kconfig"
+    151 
+    152 source "drivers/usb/gadget/Kconfig"
+    153 
+    154 config USB_LED_TRIG
+    155         bool "USB LED Triggers"
+    156         depends on LEDS_CLASS && USB_COMMON && LEDS_TRIGGERS
+    157         help
+    158           This option adds LED triggers for USB host and/or gadget activity.
+    159 
+    160           Say Y here if you are working on a system with led-class supported
+    161           LEDs and you want to use them as activity indicators for USB host or
+    162           gadget.
+    163 
+    164 endif # USB_SUPPORT
+
+
+kconfig单词
+-----------
+
+config(配置)
+menuconfig(菜单配置)
+choice/endchoice(选择)
+menu/endmenu(菜单)
+depends on(依赖) 
+bool(布尔)
+tristate(trigger state 触发状态)
+default(默认)
+---help---/help(帮助)
+if/endif(条件)
+source(关联其它kconfig配置文件)
+comment(注释)
+|| && !(逻辑关系)
+
+上面的样例并没有包括所有的特性和关键字
+
+
+kconfig语法
+-----------
+
+
+1菜单
+
+
+语法定义如下:
+----------------
+menu "菜单名称"
+	<属性>
+
+<配置选项>
+
+endmenu
+----------------
+menu和endmenu之间所有项都解释为该菜单的菜单项,自动地从菜单继承了依赖关系.
+关键字menuconfig用于定义一个配置符号和一个子菜单.
+
+menu "Bit bucket compression support"
+	config BIT_BUCKET_ZLIB
+		tristate "Bit bucket compression support"
+
+相当于
+
+menuconfig BIT_BUCKET_ZLIB
+	tristate "Bit bucket commpression support"
+
+
+2配置选项
+
+
+配置选项由config关键字如下定义:
+-----------------
+config <配置符号>
+	<类型名> "描述"
+	<属性>
+-----------------
+类型名有:
+bool	用于返回y或者n的布尔查询
+string	查询一个字符串
+hex	读取十六进制数
+integer	读取十进制数
+如果要去用户从一组选线中选择一个,则必须使用choice:
+----------
+choice
+	<属性>
+config <配置符号1>
+	<类型名>
+	<属性>
+...
+config <配置符号n>
+	<类型名>
+	<属性>
+endchoice
+----------
+架构中的样例/arch/Kconfig
+------
+choice
+        prompt "Stack Protector buffer overflow detection"
+        depends on HAVE_CC_STACKPROTECTOR
+        default CC_STACKPROTECTOR_NONE
+        help
+          This option turns on the "stack-protector" GCC feature. This
+          feature puts, at the beginning of functions, a canary value on
+          the stack just before the return address, and validates
+          the value just before actually returning.  Stack based buffer
+          overflows (that need to overwrite this return address) now also
+          overwrite the canary, which gets detected and the attack is then
+          neutralized via a kernel panic.
+
+config CC_STACKPROTECTOR_NONE
+        bool "None"
+        help
+          Disable "stack-protector" GCC feature.
+
+config CC_STACKPROTECTOR_REGULAR
+        bool "Regular"
+        select CC_STACKPROTECTOR
+        help
+          Functions will have the stack-protector canary logic added if they
+          have an 8-byte or larger character array on the stack.
+
+          This feature requires gcc version 4.2 or above, or a distribution
+          gcc with the feature backported ("-fstack-protector").
+
+          On an x86 "defconfig" build, this feature adds canary checks to
+          about 3% of all kernel functions, which increases kernel code size
+          by about 0.3%.
+
+config CC_STACKPROTECTOR_STRONG
+        bool "Strong"
+        select CC_STACKPROTECTOR
+        help
+          Functions will have the stack-protector canary logic added in any
+          of the following conditions:
+
+          - local variable's address used as part of the right hand side of an
+            assignment or function argument
+          - local variable is an array (or union containing an array),
+            regardless of array type or length
+          - uses register local variables
+
+          This feature requires gcc version 4.9 or above, or a distribution
+          gcc with the feature backported ("-fstack-protector-strong").
+
+          On an x86 "defconfig" build, this feature adds canary checks to
+          about 20% of all kernel functions, which increases the kernel code
+          size by about 2%.
+
+endchoice
+----------
+
+
+3属性
+
+
+属性用于更准确地制定配置选项的效果.如:
+cofig SWAP
+	bool "Support for paging of anonymous memory (swap)"
+	depends on MMU & BLOCK
+	default y
+depends on表示了仅当为带有MMU的系统编译内核时,而且在块层编译到内核时,才能选中
+SWAP.default表示默认情况下选择y,如果用户不修改设置,该值将自动地指派给SWAP符号.
+
+属性类型:
+1)default制定了配置项的默认设置.
+对于bool类型来说,为y或者n.
+对于tristate类型来说,有y m n三种状态.
+对于其它类型的选型必须制定默认值.
+string需要制定字符串.
+integer和hex需要制定十进制和十六进制的数值.
+2)range限制了数值选项的可能范围.
+第一个参数制定下限,第二个参数制定上限.
+3)select用于自动地选择其他的配置选项.
+这种逆向依赖机制只能用于tristate和bool类型的选项.
+4)help或---help---用于加入帮助文本.
+
+所有这些属性都可能后接if字句,其中制定了应用该属性的条件.如:
+conig ENABLE_ACCEL
+	bool "Enable device acceleration"
+	default n
+...
+config HYPERCARD_SPEEDUP
+	integer "HyperCard Speedup"
+	default 20 if ENABLE_ACCEL
+	range 1 20
+
+
+4依赖关系
+
+
+如下:
+depends [on] <表达式>
+	<表达式> ::= <符合配置>
+		<符号配置> = <符号配置>
+		( <表达式> )
+		! <表达式>
+		<表达式> && <表达式>
+		<表达式> || <表达式>
+
+赋值 括号内部计算 逻辑非 逻辑和 逻辑或
+
+样例如下:
+config OPROFILE_NMI_TIMER
+        def_bool y
+        depends on PERF_EVENTS && HAVE_PERF_EVENTS_NMI && !PPC64
+
+
+kconfig配置的汇总
+-----------------
+
+我们真的不需要一个中心式的配置文件吗?NO,kconfig只是将kernel这样浩大工程的配置
+为我们每个人负责的一小部分给尽量简化了,起码,对kernel其它不熟悉的部分我们不用去
+理会,但是对于一个想要编译整个内核的人来说需要所有的配置条件,是的,当我们将所有
+我们需要的配置条件配置完成之后,会给我们在内核源代码的根目录下生成一个中心式的
+配置文件.config,然后就可以根据这个中心配置文件编译我们需要的kernel.
+
+其实,kconfig对于开发者来说减轻了维护配置文件的负担,而对于编译一个完整的kernel
+的人来说起到剪裁kernel的作用.最终编译的时候不如让我们用一个集中所有我们想要的
+配置选项的中心配置文件来的痛快.
+
+
+==============================================================================
+==============================================================================
