@@ -48,6 +48,9 @@ makefile规则中,如果使用一个没有依赖只有命令行的双冒号规�
 次执行make时,此规则的目标文件将会被无条件的更新(即此规则定义的命令会被无条件执
 行).
 
+makefile中的命令是和shell有紧密的关系的,除了一些隐含的规则和变量以及make中的函
+数,都是shell中的命令,所以shell是make编译的基石.
+
 通常我们在工程中会遇到,其中一个(makefile-A)需要使用另外一个(makefile-B)中所定
 义的变量和规则.这时候用include(用来包含其它文件)并不保险,因为这两个文件可能存
 在规则重复定义的问题.如下可解决问题:
@@ -94,6 +97,330 @@ make如何解析makefile文件
 
 第二阶段:根据第一阶段已经建立的依赖关系结构链表决定哪些目标需要更新和创建,并使
 用对应的规则来重建这些目标.
+
+------------------------------makefile语法------------------------------------
+
+这里不可能详细的介绍每一个细节,如果要这样的话,我们需要写上一本书了.这里只做大
+致的介绍以方便我们使用.如果你是一个linux的shell用户理解这些并不难,这些东西和我
+们通常使用的shell是浑然天成的.  Let's Go>>
+
+------------------------------makefile语法------------------------------------
+
+
+GUN make可识别的指示符:
+
+
+1)多行的定义
+define VARIABLE
+endef
+
+2)条件判断的基本语法
+ifdef VARIABLE		如果定义了变量
+ifndef VARIABLE		如果没有定义变量
+ifeq (A,B)		如果A和B相等
+ifeq "A" "B"		如果A和B相等
+ifeq 'A' 'B'		如果A和B相等
+ifneq (A,B)		如果A和B不相等
+ifneq "A" "B"		如果A和B不相等
+ifneq 'A' 'B'		如果A和B不相等
+else			条件分支
+endif			条件分支结束
+
+3)包含其他makefile文件
+include FILE		包含其他的makefile文件
+-include FILE		当所要包含的文件不存在时不会有错误提示
+sinclude FILE		通-include相同,那个s代表"静默"
+对于FILE可以使用通配符
+
+4)通过override锁定定义变量
+对于一个在makefile中使用常规方式(使用"=",":="或者"define")定义的变量,我们可以
+通过命令行方式重新指定这个变量的值,如果我不希望命令行指定的变量值代替makefile
+中变量定义,那么可以使用override来对这个变量进行声明.
+override VARIABLE = VALUE		声明一个锁定的变量
+override VARIABLE := VALUE		声明一个锁定的变量,可以覆盖之前的值
+override VARIABLE += VALUE		对声明的锁定变量进行追加的值
+override VARIABLE ?= VALUE		对声明的锁定变量如果没有被赋值使用此值
+override define VARIABLE		声明多行锁定变量
+endef					声明多行锁定变量结束
+
+5)导入变量关键字(export)
+如果需要在上层make执行的makefile变量传递给子make过程,那么这个在上层makefile文
+件中的变量必须使用export指示符进行声明
+export VARIABLE		需要将这层声明的变量传递给子make进程
+unexport VARIABLE	不需要将这层声明的变量传递给子make进程
+
+6)目录搜索(vpath VPATH)
+通过变量VPATH可以指定依赖文件的搜索路径,当规则的依赖文件在当前目录不存在,make
+会在此变量所制定的目录下去寻找这些依赖文件,而关键字vpath则更为灵活,可以为不同
+类型的文件(由文件名区分)指定不同的搜索目录.
+vpath PATTERN PATH	为所有符合模式"PATTERN"的文件指定搜索目录"PATH"
+vpath PATTERN		清除之前符合模式"PATTERN"的文件设置的搜索路径.
+vpath 			清除所有已被设置的文件搜索路径.
+vpath使用方法中的"PATTERN"需要包含模式字符"%"."%"意思是匹配一个或者多个字符.
+例如,"%.h"表示所有以".h"结尾的文件.
+
+
+GNU make函数:
+
+
+函数的书写$(FUNCTION ARGUMENTS)或者${FUNCTION ARGUMENTS}
+对于用户自己的函数需要通过make的call函数来间接调用
+在makefile中应该这样书写$(sort $(x))
+参数和函数名之间可以使用若干个空格,函数的参数之间不能出现逗号和空格
+
+1)文本处理函数
+
+subst		$(subst $(FROM)$(TO)$(TEXT))
+字符串替换函数
+把字串TEXT中的FROM字串替换为TO.
+返回值:替换后的新字符串.
+
+patsubst	$(patsubst $(PATTERN)$(REPLACEMENT)$(TEXT))
+模式替换函数
+搜索TEXT中以空格分开的单词,将符合模式PATTERN替换为REPLACEMENT.
+返回值:替换后的新字符串.
+
+strip		$(strip $(STRINT)
+去空格函数
+去掉字串STRINT开头和结尾的空字符,并将其中多个连续空字符合并为一个空字符.
+返回值:无前导和结尾空字符,使用单一空格分割的多单词字符串.
+
+findstring	$(findstring $(FIND)$(IN))
+查找字符串函数
+搜索字串IN,查找FIND字串.
+返回值:如果在IN之中存在FIND,则返回FIND,否则返回空.
+
+filter		$(filter $(PATTERN...)$(TEXT))
+过滤函数
+过滤掉字串TEXT中所有不符合模式PATTERN的单词,保留所有符合此模式的单词.
+返回值:空格分割的TEXT字串中所有符合模式PATTERN字串.
+
+filter-out	$(filter-out $(PATTERN...)$(TEXT))
+反过滤函数
+与filter相反
+返回值:空格分割的TEXT字串中所有不符合模式PATTERN的字串.
+
+sort		$(sort $(LIST))
+排序函数
+给字串LIST中的单词以首字母为准进行排序(升序),并去掉重复的单词.
+返回值:空格分割的没有重复单词的字串.
+
+word		$(word $(N)$(TEXT))
+取单词函数
+取字串TEXT中第N个单词.
+返回值:返回字串TEXT中第N个单词.
+
+wordlist	$(wordlist $(S)$(E)$(TEXT))
+取字串函数
+从字串TEXT中取出从S开始到E的单词串,S和E表示单词位置的数字.
+返回值:字串TEXT中从第S到E的单词字串.
+
+words		$(words $(TEXT))
+统计单词数目函数
+计算字串TEXT中单词的数目.
+返回值:TEXT字串中的单词数.
+
+firstword	$(firstword $(NAMES...))
+取首单词函数
+取字串NAMES...中的第一个单词.
+返回值:字串NAMES...对的第一个单词.
+
+2)文件名处理函数
+
+dir		$(dir $(NAMES...))
+取目录函数
+从文件名序列NAMES中取出各个文件名的目录部分.
+返回值:空格分割的文件名序列NAMES...中每一个文件的目录部分.
+
+notdir		$(notdir $(NAMES...))
+取文件名函数
+从文件名序列NAMES...中取出非目录部分.
+返回值:文件名序列NAMES...中每一个文件的非目录部分.
+
+suffix		$(suffix $(NAMES...))
+取后缀函数
+从文件名序列NAMES...中取出各个文件名的后缀.
+返回值:以空格分割的文件名序列NAMES...中每一个文件的后缀序列.
+
+basename	$(basename $(NAMES...))
+取前缀函数
+从文件名序列NAMES...中取出各个文件名的前缀部分.
+返回值:空格分割的文件名序列NAMES...中各个文件的前缀序列.如果没有前缀,返回空.
+
+addsuffix	$(addsuffix $(SUFFIX)$(NAMES...))
+加后缀函数
+为NAMES...中的每一个文件名添加后缀SUFFIX.
+返回值:以单空格分割的添加了后缀SUFFIX的文件名序列.
+
+addprefix	$(addprefix $(PREFIX)$(NAMES...))
+加前缀函数
+为NAMES...中的每一个文件名添加前缀PREFIX.
+返回值:以单空格分割的添加了前缀PREFIX的文件名序列.
+
+join		$(join $(LIST1)$(LIST2))
+单词连接函数
+将字串LIST1和字串LIST2各单词进行对应连接.
+返回值:单空格分割的合并后的字(文件名)序列.
+
+wildcard	$(wildcard $(PATTERN))
+获取匹配模式文件名函数
+列出当前目录下所有符合模式PATTERN格式的文件名.
+返回值:空格分割的,存在当前目录下的所有符合模式PATTERN的文件名.
+
+3)杂项函数
+
+error		$(error $(TEXT...))
+产生致命错误,并提示TEXT...信息给用户,并退出make的执行.
+
+warning		$(warning $(TEXT...))
+函数warning类似于函数error,区别在于它不会导致致命错误(make不退出).
+
+shell		$(shell $(....))
+shell函数所实现的功能和shell中引用``相同.
+
+origin		$(origin VARIABLE)
+函数origin的动作不是操作变量(它的参数).它只是获取此变量(参数)相关的信息,告诉我
+们这个变量的出处(定义方式).
+返回值:undefined(未定义)default(内嵌变量)environment(环境变量)
+environment override(锁定环境变量)file(文件)command line(命令行定义)
+override(锁定变量)automatic(自动化变量)
+
+foreach		$(foreach $(VAR)$(LIST)$(TEXT))
+循环函数
+首先展开变量VAR和LIST的引用,而表达式TEXT中的变量引用不展开.执行时把LIST中使用
+空格分割的单词依次取出赋值给变量VAR,然后执行TEXT表达式.重复直到LIST的最后一个
+单词(为空时结束).
+
+call		$(call $(VARIABLE)$(PARAM)$(PARAM))
+call函数是唯一一个可以创建定制化参数函数的引用函数.使用这个函数可以实现对用户
+自已定义函数引用.
+
+if		$(if $(CONDITION)$(THEN-PART)[$(ELSE-PART)])
+条件函数
+
+eval		
+实现复杂通用的模板函数.
+
+value		$(value $(VARIABLE))
+函数value提供了一种在不对变量进行展开的情况下获取变量值的方法.
+
+
+GNU make的自动化变量:
+
+
+模式规则中,规则的目标和依赖文件名代表了一类文件名;规则的命令是对所有这一类文件
+重建过程的描述,显然,在命令中不能出现具体的文件名,否则模式规则失去意义.那么在模
+式规则的命令行中该如何表示文件.为了解决这个问题,就需要使用'自动环变量',自动化
+变量的取值是根据具体所执行的规则来决定的,取决于所执行规则的目标和依赖文件名.
+
+$@	表示规则的目标文件名.
+$%	当规则的目标文件是一个静态库文件时,代表静态库的一个成员名.
+$<	规则的第一个依赖文件名.
+%?	所有比目标文件更新的依赖文件列表,空格分割.
+$^	规则的所有依赖文件列表,使用空格分隔.
+$+	类似$^,但是它保留了依赖文件中重复出现的文件.
+$*	表示文件中除后缀以外的部分.
+
+GUN make中,还可以通过这七个自动化变量来获取一个完整文件名中的目录(D)部分和具体
+文件名(F)部分.
+
+$(@D)	表示目标文件的目录部分(不包括斜杠).
+$(@F)	目标文件的完整文件名中除目录以外的部分(实际文件名).
+$(*D)	表示目录部分.
+$(*F)	表示文件名部分.
+$(%D)	当以如archive(member)形式静态库为目标时,表示库文件中的目录部分.
+$(%F)	当以如archive(member)形式静态库为目标时,表示库文件中的文件名部分.
+$(<D)	表示规则中第一个依赖文件的目录部分.
+$(<F)	表示规则中第一个依赖文件的文件名部分.
+$(^D)	表示所有依赖文件的目录部分.
+$(^F)	表示所有依赖文件的文件名部分.
+$(+D)	表示所有依赖文件的目录部分(可存在重复文件).
+$(+F)	表示所有依赖文件的文件部分(可存在重复文件).
+$(?D)	表示被更新的依赖文件的目录部分.
+$(?F)	表示被更新的依赖文件的文件名部分.
+
+
+GNU make环境变量
+
+
+MAKEFILES
+如果在当前环境定义了一个MAKEFILES环境变量,make执行时首先将此变量的值作为需要读
+入的Makefile文件,多个文件之间使用空格分开.
+
+MAKEFILES_LIST
+make程序在读取多个makefile文件时,包括由环境变量MAKEFILES指定,命令行指当前工作
+下的默认的以及使用指示符include指定包含的,在对这些文件进行解析执行之前make读取
+的文件名将会被自动依次追加到变量MAKEFILE_LIST的定义域中.
+
+VPATH
+这个变量已经在和关键字作比较时已经介绍过了.
+
+SHELL
+它作为一个变量,我们也可以在Makefile中明确地给它赋值(指出解释程序的名字,当明确
+指定时需要使用完整的路径名.如/bin/sh),变量SHELL的默认值是/bin/sh.
+
+MAKE
+在使用make的递归调用时,在Makefile规则的命令行中应该使用变量MAKE来代替直接使用
+make.
+
+CURDIR
+在make的递归调用中,需要了解一下变量CURDIR,此变量代表make的工作目录.当使用-C选
+项进入一个子目录后,此变量将被重新赋值.
+
+.SUFFIXES
+可识别的后缀指的是特殊目标.SUFFIXES所有依赖的名字.通过给特殊目标SUFFIXES添加依
+赖来增加一个可被识别的后缀.使用如下:
+.SUFFIXES:		#删除所有已定义的可识别后缀
+.SUFFIXES: .c .o .h	#重新定义
+
+.LIBPATTERNS
+变量.LIBPATTERNS就是告诉链接器在执行链接过程中对于出现-LNAME的文件如何展开.当
+然也可以将此变量为空,取消链接器对-lNAME格式的展开.
+
+
+GUN make隐含变量:
+
+
+AR		函数库打包程序,可创建静态库.a文档,默认是ar.
+AS		汇编程序.默认是as.
+CC		C编译程序.默认是cc.
+CXX		C++编译程序,默认是g++.
+CO		从RCS中提取文件的程序.默认是co.
+CPP		C程序的预处理器(输出是标准输出设备).默认是$(CC) –E
+FC		编译器和预处理Fortran和Ratfor源文件的编译器,默认是f77.
+GET		从SCCS中提取文件程序.默认是get.
+LEX		将Lex语言转变为C或Ratfor的程序.默认是lex.
+PC		Pascal语言编译器.默认是pc.
+YACC		Yacc文法分析器(针对C程序).默认命令是yacc.
+YACCR		Yacc文法分析器针对于Ratfor程序).默认是yacc –r
+MAKEINFO	转换Texinfo源文件.texi到Info文件程序.默认是makeinfo.
+TEX		从TeX源文件创建TeX DVI文件的程序.默认是tex.
+TEXI2DVI	从Texinfo源文件创建TeX DVI文件的程序.默认是texi2dvi.
+WEAVE		转换Web到TeX的程序.默认是weave.
+CWEAVE		转换C Web到TeX的程序.默认是cweave.
+TANGLE		转换Web到Passcal语言的程序.默认是tangle.
+CTANGLE		转换C Web到C.默认是ctangle.
+RM		删除命令默认是rm –f.
+
+
+GUN make隐含命令参数的变量:
+
+
+下面的是代表命令执行参数的变量.如果没有给出默认值则默认值为空.
+
+ARFLAGS		执行AR命令的命令行参数.默认值是rv.
+ASFLAGS		执行汇编器AS的命令行参数.(当明显的调用.s或.S文件时).
+CFLAGS		执行CC编译器的命令行参数(编译.c源文件的选项).
+CXXFLAGS	执行g++编译器的命令行参数(编译.cc源文件的选项).
+COFLAGS		执行co的命令行参数(在RCS中提取文件的选项).
+CPPFLAGS	执行C预处理器cc –E的命令行参数(C和Fortran编译器会用到)
+FFLAGS		Fotran语言编译器f77执行的命令行参数(编译Fortran源文件的选项).
+GFLAGS		SCCS "get"程序参数.
+LDFLAGS		连接器参数.(如:ld)
+LFLAGS		Lex文法分析器参数
+PFLAGS		Pascal语言编译器参数.
+RFLAGS		Ratfor程序的Fortran编译器参数.
+YFLAGS		Yacc文法分析器参数.
 
 
 ==============================================================================
