@@ -101,6 +101,162 @@ LINUX是什么？
 
 软件需要
 
- 
+ 编译和运行4.x的内核需要将各种各样的软件包更新到新的版本。对于需要最小的版本号
+ 和如何更新那些软件包可以参考Documentation/Changes。要意识到使用太久的软件包会
+ 直接的引起很难追踪的错误，因此不要想着在编译过程中间出现明显的错误的时候再去
+ 更新你的软件包。
+
+为内核建立目录：
+
+ 当你在编译内核的时候，所有的文件输出默认的都和内核的源代码存储在一起。通过使
+ 用make O=output/dir可以让你为输出文件指定一个地方（包括.config）。
+ 例如：
+
+  kernel source code:/usr/src/linux-4.X
+  build directory:/home/name/build/kernel
+
+ 为了配置和编译内核，使用如下：
+
+  cd /usr/src/linux-4.X
+  make O=/home/name/build/kernel menuconfig
+  make O=/home/name/build/kernel
+  sudo make O=/home/name/build/kernel modules_install install
+
+ 请注意：假如O=output/dir这个选项被使用，那么对于make的所有调用都要使用。
+
+配置内核：
+
+ 即使你升级了一个小的版本也不要跳过这个步骤。新的配置选项会在每个发行版上添加
+ 并且假如配置文件没有如预期的被设置的话会引起奇怪的问题。假如你想用最小的工作
+ 量将已经存在的配置文件应用到一个新的版本的话，使用make oldconfig，他会问你一
+ 些关于新的配置选项的问题。
+
+-其它配置命令是：
+
+  make config	文本界面。
+
+  make menuconfig 基于文本的彩色菜单，按钮和对话。
+
+  make nconfig	增强的基于文本的颜色的菜单。
+
+  make xconfig	基于（Qt）图形窗口的配置工具。
+
+  make gconfig	基于（GTK+）图形窗口的配置工具。
+
+  make oldconfig 对于你的已存在./.config文件的都使用默认选项，而新的选项询问。
+
+  make silentoldconfig 像上面，但避免让已回答的问题出现在屏幕上，此外更新依赖。
+
+  make olddefconfig 像上面，但给那些默认的值设置成新的符号却不给你提示。
+
+  make defconfig 
+	从arch/$ARCH/defconfig或arch/$ARCH/configs/${PLATFORM}_defconfig的配置
+	中使用默认的配置符来创建一个./.config文件，但依赖与这个架构。
+
+  make ${PLATFORM}_defconfig
+	从arch/$ARCH/configs/${PLATFORM}_defconfig的配置中使用默认的配置符来创
+	建一个./.config文件，使用make help能针对你的架构提供一个可使用的列表。
+
+  make allyesconfig 尽可能多的将配置符号设置成y来创建一个./.config文件。
+
+  make allmodconfig 尽可能多的将配置符号设置成m来创建一个./.config文件。
+
+  make allnoconfig 尽可能多的将配置符号设置成n来创建一个./.config文件。
+
+  make randconfig 随机的配置设置符号来创建一个./.config文件。
+
+  make localmodconfig
+	基于目前的配置选项和加载的模块（lsmod）来创建一个配置。禁止所有对已经
+	加载的模块没有必要的模块选项。
+
+	对于要给另一台机器创建一个localmodconfig配置，首先将那台机器的已加载模
+	块（lsmod）存储到一个文件中，然后将其作为一个LSMOD参数传递给他。
+
+    target$ lsmod > /tmp/mylsmod
+    target$ scp /tmp/mylsmod host:/tmp
+
+    host$ make LSMODE=/tmp/mylsmod localmodconfig
+
+	上面的对于跨平台编译也能很好的工作。
+
+  make localyesconfig
+	类似与localmodconfig，除了他将所有的模块选项都改为内建（=y）选项。
+
+ 在Documentation/kbuild/kconfig.txt中，你能够找到关于内核配置工具更多的信息。
+
+-关于make config的注意事项：
+
+ -使用没有必要的驱动将使内核变的更大，并且在某些情况下会导致问题：探测一个不存
+  在的控制卡可能混淆你的其他控制器。
+
+ -通过将CPU类型设置的比386更高来编译的这个内核不会在386平台上工作。在启动的时
+  候内核能够检测到这一点并放弃启动。
+
+ -即使是在那些从来都不使用数学模拟器的情况下，一个将数学模拟器编译进来的内核仍
+  然要使用协处理器。这个内核要稍微大一点，但是他仍能够在不同的机器上工作，并且
+  不用理睬他们是否拥有一个数学协处理器。
+
+ -这个kernel hacking配置细节通常会让内核变得更大或更慢（或都是），甚至通过配置
+  一个尝试终止那些有问题的代码来找到内核的问题（kmalloc()）的手段会让内核变的
+  不稳定。因此，对于那些development，experimental或debugging的特性，你应该使用
+  n来回答配置内核的问题。
+
+编译内核：
+
+-确保你使用的至少是gcc 3.2版本的。可从Documentation/Changes找到更多的信息。
+
+ 请注意你仍能够在这个内核上运行一个a.out的用户程序。
+
+-通过make命令来创建一个压缩的内核镜像。假如你已经将lilo在makefiles文件中写入编
+ 译到内核中，你也可以使用make install命令，但是你首先要核查一下你特殊的lilo安
+ 装。
+
+ 为了实际上的安装，你不得不使用root账户，但是正常编译的情况下不会使用他。不要
+ 滥用root账户。
+
+-假如你将内核的某些部分作为模块配置了，你将不得不使用make modules_install命令。
+
+-内核的编译/构建输出细节：
+
+ 通常情况下，会以相当安静的模式构建系统内核（但是不是完全沉默）。所以，有时你
+ 或者内核的开发者需要看一下编译，链接，或命令，如他们已经执行的命令是否正确。
+ 对于这种情况，使用verbose的构建模式。通过在make命令中使用V=1来做到。例如：
+
+  make V=1 all
+
+ 为了让构建系统也输出每个目标重新构建的原因，要使用V=2。默认的是V=0。
+
+-以防万一，最好在手边有一个内核的备份。这对于开发版内核显得尤其重要，因为每个
+ 新特性包含了还没有被充分修正漏洞的新代码。也要确保给你对应的内核的模块也做一
+ 个相应的备份。假如你在安装和你目前正在工作的版本号相同的内核，在你要使用如他
+ make modules_install命令之前，要确保给你的模块目录做一个备份。
+
+ 在编译前，另外一种方法是使用内核的配置选项LOCALVERSION来附加一个唯一的后缀到
+ 常规的内核版本。LOCALVERSION能够在General Setup菜单中设置。
+
+-为了启动你的新内核，你需要拷贝内核镜像（例如.../linux/arch/i386/boot/bzImage
+ 编译后的镜像）到你的启动引导器能够找到的地方。
+
+-能够不在一个启动器（如LILO）的帮助下来直接的启动一个内核已经不再支持了。
+
+ 假如你从一个硬盘驱动器上启动Linux，碰巧使用启动器LILO，他通过在/ect/lilo.conf
+ 这个文件中来指定使用的内核镜像。这个内核镜像文件通常是/vmlinuz，/boot/vmlinuz，
+ /bzImage或者/boot/bzImage。为了要使用新的内核，保存一份老镜像的拷贝，然后将新
+ 的镜像拷贝过来覆盖这个旧的镜像。之后，你必须回到LILO去更新这个加载地图！假如
+ 你不做，不会启动新的镜像。
+
+ 通过运行/sbin/lilo去重新安装LILO通常是有麻烦的。在新的镜像不能正常工作时，你
+ 能够通过编辑/etc/lilo.conf去指定旧的内核镜像（譬如，/vmlinux.old）。通过查看
+ LILO文档能够得到更多的信息。
+
+ 假如重新安装LILO的话，你需要对所有选项进行设置。关闭系统，重启，好好享受吧！
+
+ 假如你需要在内核镜像方面改变像默认的根设备，图形模式，ramdisk大小等等时，使用
+ rdev这个程序（或者适当的改变LILO的启动选项）。没有必要通过改变那些参数就能够
+ 行得通的方法，却南辕北辙的为此重新编译内核。
+
+-重新启动，享用新的内核吧。
+
+
 ==============================================================================
 ==============================================================================
