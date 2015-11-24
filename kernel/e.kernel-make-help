@@ -1,0 +1,272 @@
+==============================================================================
+
+make help
+---------
+
+
+编译和配置内核，我们应该仔仔细细的给内核每一个选项都进行配置吗？当然可以，这有
+助于你深入了解整个内核的架构和细节，但是，实用主义者不会想要将时间浪费在永无尽
+头的盘山公路上，不如利用隧道直达目的地。
+
+内核目录树中有一个scritp的目录，里面有shell，python，perl等脚本程序，以及许多
+的makefile（看看makefile的后缀名）可解析的编译配置文件，看看那些makefile的后缀
+名就知道是做些什么的，当然还有少许的C程序及头文件，这个目录里面的程序都是为内
+核的配置和编译工作的。
+
+在内核源代码目录树的根部执行一下make help就会列出你能够执行的目标选项，这些给
+你帮助的信息其实是make程序解析makefile文件中的@echo语法而回显的。你可以在源码
+根目录的Makefile文件中找到，但是make help回显的部分内容是依赖于你自己平台的。
+
+
+我的make help
+-------------
+
+
+Cleaning targets:
+  clean		  - Remove most generated files but keep the config and
+                    enough build support to build external modules
+  mrproper	  - Remove all generated files + config + various backup files
+  distclean	  - mrproper + remove editor backup and patch files
+
+Configuration targets:
+  config	  - Update current config utilising a line-oriented program
+  nconfig         - Update current config utilising a ncurses menu based
+                    program
+  menuconfig	  - Update current config utilising a menu based program
+  xconfig	  - Update current config utilising a Qt based front-end
+  gconfig	  - Update current config utilising a GTK+ based front-end
+  oldconfig	  - Update current config utilising a provided .config as base
+  localmodconfig  - Update current config disabling modules not loaded
+  localyesconfig  - Update current config converting local mods to core
+  silentoldconfig - Same as oldconfig, but quietly, additionally update deps
+  defconfig	  - New config with default from ARCH supplied defconfig
+  savedefconfig   - Save current config as ./defconfig (minimal config)
+  allnoconfig	  - New config where all options are answered with no
+  allyesconfig	  - New config where all options are accepted with yes
+  allmodconfig	  - New config selecting modules when possible
+  alldefconfig    - New config with all symbols set to default
+  randconfig	  - New config with random answer to all options
+  listnewconfig   - List new options
+  olddefconfig	  - Same as silentoldconfig but sets new symbols to their
+                    default value
+  kvmconfig	  - Enable additional options for kvm guest kernel support
+  xenconfig       - Enable additional options for xen dom0 and guest kernel support
+  tinyconfig	  - Configure the tiniest possible kernel
+
+Other generic targets:
+  all		  - Build all targets marked with [*]
+* vmlinux	  - Build the bare kernel
+* modules	  - Build all modules
+  modules_install - Install all modules to INSTALL_MOD_PATH (default: /)
+  firmware_install- Install all firmware to INSTALL_FW_PATH
+                    (default: $(INSTALL_MOD_PATH)/lib/firmware)
+  dir/            - Build all files in dir and below
+  dir/file.[oisS] - Build specified target only
+  dir/file.lst    - Build specified mixed source/assembly target only
+                    (requires a recent binutils and recent build (System.map))
+  dir/file.ko     - Build module including final link
+  modules_prepare - Set up for building external modules
+  tags/TAGS	  - Generate tags file for editors
+  cscope	  - Generate cscope index
+  gtags           - Generate GNU GLOBAL index
+  kernelrelease	  - Output the release version string (use with make -s)
+  kernelversion	  - Output the version stored in Makefile (use with make -s)
+  image_name	  - Output the image name (use with make -s)
+  headers_install - Install sanitised kernel headers to INSTALL_HDR_PATH
+                    (default: ./usr)
+
+Static analysers
+  checkstack      - Generate a list of stack hogs
+  namespacecheck  - Name space analysis on compiled kernel
+  versioncheck    - Sanity check on version.h usage
+  includecheck    - Check for duplicate included header files
+  export_report   - List the usages of all exported symbols
+  headers_check   - Sanity check on exported headers
+  headerdep       - Detect inclusion cycles in headers
+  coccicheck      - Check with Coccinelle.
+
+Kernel selftest
+  kselftest       - Build and run kernel selftest (run as root)
+                    Build, install, and boot kernel before
+                    running kselftest on it
+
+Kernel packaging:
+  rpm-pkg             - Build both source and binary RPM kernel packages
+  binrpm-pkg          - Build only the binary kernel package
+  deb-pkg             - Build the kernel as a deb package
+  tar-pkg             - Build the kernel as an uncompressed tarball
+  targz-pkg           - Build the kernel as a gzip compressed tarball
+  tarbz2-pkg          - Build the kernel as a bzip2 compressed tarball
+  tarxz-pkg           - Build the kernel as a xz compressed tarball
+  perf-tar-src-pkg    - Build perf-4.2.6.tar source tarball
+  perf-targz-src-pkg  - Build perf-4.2.6.tar.gz source tarball
+  perf-tarbz2-src-pkg - Build perf-4.2.6.tar.bz2 source tarball
+  perf-tarxz-src-pkg  - Build perf-4.2.6.tar.xz source tarball
+
+Documentation targets:
+ Linux kernel internal documentation in different formats:
+  htmldocs        - HTML
+  pdfdocs         - PDF
+  psdocs          - Postscript
+  xmldocs         - XML DocBook
+  mandocs         - man pages
+  installmandocs  - install man pages generated by mandocs
+  cleandocs       - clean all generated DocBook files
+
+Architecture specific targets (x86):
+* bzImage      - Compressed kernel image (arch/x86/boot/bzImage)
+  install      - Install kernel using
+                  (your) ~/bin/installkernel or
+                  (distribution) /sbin/installkernel or
+                  install to $(INSTALL_PATH) and run lilo
+  fdimage      - Create 1.4MB boot floppy image (arch/x86/boot/fdimage)
+  fdimage144   - Create 1.4MB boot floppy image (arch/x86/boot/fdimage)
+  fdimage288   - Create 2.8MB boot floppy image (arch/x86/boot/fdimage)
+  isoimage     - Create a boot CD-ROM image (arch/x86/boot/image.iso)
+                  bzdisk/fdimage*/isoimage also accept:
+                  FDARGS="..."  arguments for the booted kernel
+                  FDINITRD=file initrd for the booted kernel
+
+  i386_defconfig           - Build for i386
+  x86_64_defconfig         - Build for x86_64
+
+  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build
+  make V=2   [targets] 2 => give reason for rebuild of target
+  make O=dir [targets] Locate all output files in "dir", including .config
+  make C=1   [targets] Check all c source with $CHECK (sparse by default)
+  make C=2   [targets] Force check of all c source with $CHECK
+  make RECORDMCOUNT_WARN=1 [targets] Warn about ignored mcount sections
+  make W=n   [targets] Enable extra gcc checks, n=1,2,3 where
+		1: warnings which may be relevant and do not occur too often
+		2: warnings which occur quite often but may still be relevant
+		3: more obscure warnings, can most likely be ignored
+		Multiple levels can be combined with W=12 or W=123
+
+Execute "make" or "make all" to build all targets marked with [*] 
+For further info see the ./README file
+
+
+make help翻译
+-------------
+
+
+清楚目标：
+  clean		- 移除大部分生成文件，但是保留配置文件和足够支持构建外部模块。
+  mrproper	- 移除所有文件（包括生成文件+配置文件+各种备份文件）。
+  distclean	- mrproper + 移除编译备份和补丁文件。
+
+配置目标：
+  config	- 利用面向行的程序来更新目前的配置文件。
+  nconfig	- 利用ncurses菜单的基本程序来更新目前的配置文件。
+  menuconfig	- 利用菜单的基本程序来更新目前的配置文件。
+  xconfig	- 利用Qt基本前端来更新目前的配置文件。
+  gconfig	- 利用GTK+基本前段来更新目前的配置文件。
+  oldconfig	- 利用一个已被提供的.config配置文件为基础来更新目前的配置。
+  localmodconfig - 通过禁用的模块不加载来更新目前的配置文件。
+  localyesconfig - 通过将本地模块转换为核心来更新目前的配置文件。
+  silentoldconfig - 同oldconfig一样，但是更安静，另外更新依赖。
+  defconfig	- 利用来自于ARCH提供的默认配置新建一个配置。
+  savedefconfig	- 保存目前的配置作为./defconfig（最小配置）。
+  allnoconfig	- 通过将所有的选项都用no回答的方式来新建一个配置。
+  allyesconfig	- 通过将所有的选项都用yes回答的方式来新建一个配置。
+  allmodconfig	- 如果可能的话编译为模块来新建一个配置。
+  alldefconfig	- 所有的符号都被设置成默认来新建一个配置。
+  randconfig	- 随机回答所有的选项来新建一个配置。
+  listnewconfig	- 列出新的选项。
+  olddefconfig	- 同silentoldconfig一样，但将新的选项设置为默认值。
+  kvmconfig	- 启用那些为了支持kvm guest功能的内核选项。
+  xenconfig	- 启用那些为了支持xen dom0和guest功能的内核选项。
+  tinyconfig	- 尽可能的配置最小的内核。
+
+其它通用目标：
+  all		- 构建所有使用[*]标记的目标。
+* vmlinux	- 构建裸内核。
+* modules	- 构架所有模块。
+  modules_install - 安装所有的模块到INSTALL_MOD_PATH（默认：/）。
+  firmware_install - 安装所有的固件到INSTAL_FW_PATH
+		     （默认：$(INSTALL_MOD_PATH)/lib/firmware)）。
+  dir/		- 在dir目录及以下来构建所有文件。
+  dir/file.[oisS] - 仅仅构建指定的目标。
+  dir/file.lst	- 仅仅构建指定（源码/汇编）混合目标。
+		  （需要一个最近的binutils和最近的build(Sytem.map)）
+  dir/file.ko	- 构建包括最终链接的模块。
+  modules_prepare - 为构建另外的模块做准备。
+  tags/TAGS	- 为编辑者生成tags文件。
+  cscope	- 生成cscope索引。
+  gtags		- 生成GUN GLOBAL索引。
+  kernelrelease	- 输出释放版本字符串（使用make -s）。
+  kernelversion	- 输出存在Makefil中的版本（使用make -s）。
+  image_name	- 输出镜像名（使用make -s）。
+  headers_install - 安装内核头文件到INSTALL_HDR_PATH（默认：./usr）。
+
+静态分析
+  checkstack	- 生成函数栈列表。
+  namespacecheck - 在已编译内核上进行名字空间分析。
+  versioncheck	- 关于version.h使用的合理核查。
+  includecheck	- 核查关于被包含在内的头文件是否重复。
+  export_report	- 列出那些所有导出符号的使用方法。
+  headers_check	- 关于导出头的完整性检查。
+  headerdep	- 检测头的包含周期。
+  coccicheck	- 使用Coccinelle进行核查。
+
+内核自测
+  kselftest	- 构建并运行内核自测（使用root运行）
+		  在运行kselftest之前需要构建安装和启动内核。
+
+内核打包：
+  rpm-pkg	- 构建带有源代码的二进制RPM内核包。
+  binrpm-pkg	- 只构建二进制内核包。
+  deb-pkg	- 构建一个deb包格式的内核。
+  tar-pkg	- 构建一个无压缩的tar包内核。
+  targz-pkg	- 构建一个gzip压缩格式的tar包内核。
+  tarbz2-pkg	- 构建一个bzip2压缩格式的tar包内核。
+  tarxz-pkg	- 构建一个xz压缩格式的tar包内核。
+  perf-tar-src-pkg - 构建perf-4.2.6.tar源代码的tar包。
+  perf-targz-src-pkg - 构建perf-4.2.6.tar.gz源代码tar包。
+  perf-tarbz2-src-pkg - 构建perf-4.2.6.tar.bz2源代码tar包。
+  perf-tarxz-src-pkg - 构建perf-4.2.6.tar.xz源代码tar包。
+
+文档目标：
+ Linux内核不同格式的内部内核：
+  htmldocs	- HTML
+  pdfdocs	- PDF
+  psdocs	- Postscript
+  xmldocs	- XML DocBook
+  mandocs	- man pages
+  installmandocs - 安装被mandocs生成的手册格式文档
+  cleandocs	- 清楚所有生成的DocBook文件
+
+指定架构目标（x86）：
+* bzImage	- 压缩内核镜像（arch/x86/boot/bzImage）
+  install	- 使用(your) ~/bin/installkernel或者
+		  (distribution) /sbin/installkernel或者
+		  将内核安装到$(INSTALL_PATH)并运行lilo
+  fdimage	- 创建一个1.4MB启动软盘镜像（arch/x86/boot/fdimage）
+  fdimage144	- 创建一个1.4MB启动软盘镜像（arch/x86/boot/fdimage）
+  fdimage288	- 创建一个2.8MB启动软盘镜像（arch/x86/boot/fdimage）
+  isoimage	- 创建一个启动CD-ROM镜像（arch/x86/boot/image.iso）
+		   bzdisk/fdimage*/isoimage也接受：
+		   FDARGS="..." 启动内核的参数
+		   FDINITRD=file 启动内核的initrd
+
+  i386_defconfig	-为i386平台构建
+  x86_64_defconfig	-为x86_64平台构建
+
+  make V=0|1 [targets] 0 => 安静构建（默认），1 => 输出细节的构建
+  make V=2   [targets] 2 => 对于重新构建目标给出原因
+  make O=dir [targets] 将所有输出的文件（包括.config）指定输出到dir
+  make C=1   [targets] 使用$CHECK核查所有的C源代码
+  make C=2   [targets] 强制使用$CHECK核查所有的C源代码
+  make RECORDMCOUNT_WARN=1 [targets] 关于忽略的mcount段给予警告
+  make W=n   [targets] 启用额外的gcc核查，n=1,2,3分别表示
+		1：出现相关的警告并且不会过于频繁的出现
+		2：经常发生的警告，但是可能仍然有效
+		3：比较隐晦的警告，最容易被忽视的
+		多个级别能够联合使用，如W=12或者W=123
+
+执行make或者make all来构建用[*]标记的所有构建目标。
+更多的信息，可以查看这个./README文件
+
+
+==============================================================================
+==============================================================================
